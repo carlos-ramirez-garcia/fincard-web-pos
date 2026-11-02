@@ -1,0 +1,62 @@
+<section class="audit">
+  <header class="audit-header">
+    <h2>Auditoría de transacciones</h2>
+    <div class="audit-controls">
+      <input
+        class="filter"
+        placeholder="Filtrar por PAN (opcional)"
+        [value]="filter()"
+        (input)="onFilter($event)"
+      />
+      <button type="button" class="ghost" (click)="refresh()">Refrescar ⟳</button>
+      <span class="live-dot" title="polling cada 15s"></span>
+    </div>
+  </header>
+
+  @if (failure(); as failure) {
+    <div class="verdict declined">
+      <span class="verdict-icon">⚠️</span>
+      <span class="verdict-code">{{ failure.code }}</span>
+    </div>
+    <p class="error-text">{{ failure.message }}</p>
+  }
+
+  @if (entries().length === 0 && !failure()) {
+    <p class="muted">Sin eventos APPROVED aún: emite una autorización aprobada desde Checkout (los declines no se auditan, ADR-0003).</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Transacción</th>
+            <th>Tarjeta</th>
+            <th>Decisión</th>
+            <th>Auth</th>
+            <th class="num">Monto</th>
+            <th>Comercio</th>
+            <th>Hora evento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of entries(); track entry.transactionId + entry.receivedAt) {
+            <tr>
+              <td class="mono">{{ entry.transactionId.slice(0, 8) }}…</td>
+              <td class="mono">{{ entry.maskedCardNumber }}</td>
+              <td>
+                <span class="badge"
+                      [class.green]="entry.decision === 'APPROVED'"
+                      [class.red]="entry.decision !== 'APPROVED'">
+                  {{ entry.responseCode }}
+                </span>
+              </td>
+              <td class="mono">{{ entry.authorizationCode || '—' }}</td>
+              <td class="num">{{ entry.amount | number: '1.2-2' }} {{ entry.currency }}</td>
+              <td>{{ entry.merchantId }}</td>
+              <td>{{ entry.transactionTs | date: 'HH:mm:ss' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

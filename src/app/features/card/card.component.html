@@ -1,0 +1,49 @@
+<section class="card-view">
+  <h2>Estado de tarjeta</h2>
+
+  <div class="card-select">
+    @for (pan of pans; track pan) {
+      <button type="button" class="ghost"
+              [class.active]="pan === selectedPan()"
+              (click)="select(pan)"
+              [disabled]="loading()">
+        {{ mask(pan) }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="spinner"><div></div><div></div></div>
+  } @else if (failure(); as failure) {
+    <div class="verdict declined">
+      <span class="verdict-icon">⚠️</span>
+      <span class="verdict-code">{{ failure.code }}</span>
+    </div>
+    <p class="error-text">{{ failure.message }}</p>
+  } @else if (card(); as card) {
+    <div class="credit-card" [class.blocked]="card.status === 'BLOCKED'">
+      <div class="cc-chip"></div>
+      <div class="cc-number">{{ card.maskedCardNumber }}</div>
+      <div class="cc-meta">
+        <span [class.cache-hit]="card.cacheHit">{{ card.cacheHit ? '⚡ Redis cache' : '🗄️ DB read' }}</span>
+        <span>{{ card.status }}</span>
+      </div>
+      <div class="cc-bottom">
+        <div>
+          <span class="cc-label">Saldo</span>
+          <span class="cc-value">{{ card.currentBalance | number: '1.2-2' }} {{ card.currency }}</span>
+        </div>
+        <div>
+          <span class="cc-label">Estado</span>
+          <span class="badge"
+                [class.green]="card.status === 'ACTIVE'"
+                [class.red]="card.status !== 'ACTIVE'">
+            {{ card.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <p class="muted">Selecciona un PAN del seed: la lectura va a Redis primero (cache-aside) y la DB respalda el saldo con write-through.</p>
+  }
+</section>

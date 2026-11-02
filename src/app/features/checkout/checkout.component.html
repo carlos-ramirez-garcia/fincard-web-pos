@@ -1,0 +1,92 @@
+<section class="checkout">
+  <div class="panel form-panel">
+    <h2>Simulador de autorización</h2>
+
+    <div class="seed-chips">
+      @for (seed of seedCards; track seed.pan) {
+        <button type="button" class="chip" (click)="applySeed(seed)">
+          <span class="chip-badge">{{ seed.badge }}</span>
+          <span class="chip-label">{{ seed.label }}</span>
+          <span class="chip-pan">{{ seed.pan }}</span>
+        </button>
+      }
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Tarjeta (PAN)
+        <input formControlName="cardNumber" inputmode="numeric" autocomplete="off" />
+      </label>
+      <div class="row">
+        <label>
+          Vigencia (MM/YY)
+          <input formControlName="cardExpiry" placeholder="10/29" autocomplete="off" />
+        </label>
+        <label>
+          Monto
+          <input formControlName="amount" type="number" step="0.01" min="0.01" />
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          Moneda
+          <input formControlName="currency" maxlength="3" />
+        </label>
+        <label>
+          Comercio ID
+          <input formControlName="merchantId" />
+        </label>
+      </div>
+      <label>
+        Comercio nombre
+        <input formControlName="merchantName" />
+      </label>
+
+      <button type="submit" class="primary" [disabled]="form.invalid || loading()">
+        @if (loading()) { Procesando… } @else { Simular pago }
+      </button>
+      @if (form.touched && form.invalid) {
+        <p class="hint">Revisa los campos: PAN de 13 a 19 dígitos, vigencia MM/YY, monto mayor a 0.</p>
+      }
+    </form>
+  </div>
+
+  <div class="panel result-panel">
+    <h2>Resultado</h2>
+
+    @if (loading()) {
+      <div class="spinner"><div></div><div></div></div>
+      <p class="muted">El flujo avanza: validación → PL/SQL → outbox → Kafka.</p>
+    } @else if (response(); as response) {
+      <div class="verdict" [class.approved]="isApproved()" [class.declined]="!isApproved()">
+        <span class="verdict-icon">{{ isApproved() ? '✅' : '❌' }}</span>
+        <span class="verdict-code">{{ response.responseCode }} · {{ response.decision }}</span>
+      </div>
+      <dl class="detail">
+        <div><dt>Transacción</dt><dd>{{ response.transactionId }}</dd></div>
+        @if (response.authorizationCode) {
+          <div><dt>Autorización</dt><dd>{{ response.authorizationCode }}</dd></div>
+        }
+        @if (response.declineCode) {
+          <div><dt>Decline code</dt><dd>{{ response.declineCode }}</dd></div>
+        }
+        @if (response.remainingBalance !== undefined) {
+          <div><dt>Saldo resultante</dt><dd>{{ response.remainingBalance | number: '1.2-2' }}</dd></div>
+        }
+      </dl>
+      @if (isApproved()) {
+        <p class="hint">Evento APPROVED publicado al outbox → Kafka: visible en la ruta Auditoría.</p>
+      } @else {
+        <p class="hint">Los DECLINED no alimentan la bitácora por diseño (outbox solo-APPROVED, ADR-0003).</p>
+      }
+    } @else if (failure(); as failure) {
+      <div class="verdict declined">
+        <span class="verdict-icon">⚠️</span>
+        <span class="verdict-code">{{ failure.code }}</span>
+      </div>
+      <p class="error-text">{{ failure.message }}</p>
+    } @else {
+      <p class="muted">Elige un escenario del panel izquierdo o llena el formulario.</p>
+    }
+  </div>
+</section>

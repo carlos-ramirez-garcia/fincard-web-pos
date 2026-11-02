@@ -1,0 +1,20 @@
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">FC</span>
+      <span class="brand-name">{{ brand }}</span>
+      <span class="brand-sub">authorization sandbox</span>
+    </div>
+    <nav>
+      <a routerLink="/checkout" routerLinkActive="active">💳 Checkout</a>
+      <a routerLink="/card" routerLinkActive="active">🔍 Tarjeta</a>
+      <a routerLink="/audit" routerLinkActive="active">📜 Auditoría</a>
+    </nav>
+    <div class="env">
+      <span class="env-dot"></span> compose: oracle · redis · kafka · core · audit
+    </div>
+  </header>
+  <main>
+    <router-outlet />
+  </main>
+</div>
